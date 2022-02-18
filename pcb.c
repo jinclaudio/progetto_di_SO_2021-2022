@@ -12,7 +12,29 @@ void initPcbs(){
 		LIST_HEAD_INIT(&(pcbFree_table[j].p_child));
 	}
 }
+//3
+pcb_t *allocPcb(){
+    struct pcb_t *el;
+    if (list_empty(&pcbFree_h)){
+        return NULL;
+    }
+    else{
+        //salvo l'indirizzo del primo elemento della lista
+        el = container_of(pcbFree_h.next, pcb_t, p_list);
+        
+        list_del(pcbFree_h.next);
 
+        //li inizializzo 
+        INIT_LIST_HEAD(&(el->p_child));
+        INIT_LIST_HEAD(&(el->p_sib));
+        INIT_LIST_HEAD(&(el->p_list));
+
+        el->p_parent = NULL;
+        el->p_s=el->p_time=0;
+
+        return el;
+    }
+}
 //4
 
 void mkEmptyProcQ(struct list_head *head){
