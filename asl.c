@@ -9,7 +9,7 @@ int *s_key;
 struct list_head s_procQ;
 } semd_t;
 
-static struct semd_t semd_table[MAX_PROC];  //array semafori
+static struct semd_t semd_table[MAX_PROC];	//array semafori
 static struct list_head semdFree_h;     	//lista semd liberi
 static struct list_head semd_h;          	//lista send attivi (ASL)
 
@@ -17,7 +17,7 @@ semd_t* getSemd(int *semAdd) {
 	semd_t* s_iter;
 	if(!list_empty(&semd_h)) {
 		list_for_each_entry(s_iter, &semd_h, s_next);		//scorro la lista ASL
-	    if(s_iter->s_key == key)
+	    if(s_iter->s_key == semAdd)
 			return s_iter; 		//se semd corrente contiene la chiave cercata, ritorno il suo puntatore
 		else
 			return NULL;		//non trova semd con la chiave cercata, ritorno NULL
@@ -37,16 +37,16 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 		//inizializzo i campi del semaforo
 			INIT_LIST_HEAD(&semAdd->s_next); 
 			INIT_LIST_HEAD(&semAdd->s_procQ); 
-			semd_key->s_key = key;		//assegno la key al semaforo
-			insertProcQ(&semd_key->s_procQ, p);			//aggiungo p alla coda dei processi bloccati
+			semd_key->s_key = semAdd;		//assegno la chiave al semaforo
+			insertProcQ(&semd_key->s_procQ, p);		//aggiungo p alla coda dei processi bloccati
 			list_add(&semd_key->s_next, &semd_h);		//aggiungo semd_key in testa alla ASL
-			p->p_semkey = key;			//chiave del semaforo a cui andrà in coda
+			p->p_semkey = semAdd;			//chiave del semaforo a cui andrà in coda
 			return FALSE;
 		}	
 	}
 	else {		//semd è presente nella ASL
 		//imposto i campi di semd_key e di p
-		p->p_semkey = key;				//chiave del semaforo a cui andrà in coda
+		p->p_semkey = semAdd;				//chiave del semaforo a cui andrà in coda
 		insertProcQ(&(semd_key->s_procQ), p);		//aggiungo p alla coda dei processi bloccati
 		return FALSE;
 	}
@@ -58,10 +58,10 @@ pcb_t* removeBlocked(int *semAdd){
 	semd_t* ASL_Semd = getSemd(semAdd);
 	if(ASL_Semd == NULL) return NULL; 	//se semd non è nella ASL ritorno NULL
 	    else {    
-			procQ_removed = removeProcQ(&(ASL_Semd->s_procQ)); //rimuovo il primo processo dalla lista di quelli bloccati
-			if(list_empty(&(ASL_Semd->s_procQ))) {  //se la lista dei processi bloccati è vuota
+			procQ_removed = removeProcQ(&(ASL_Semd->s_procQ));	//rimuovo il primo processo dalla lista di quelli bloccati
+			if(list_empty(&(ASL_Semd->s_procQ))) {  	//se la lista dei processi bloccati è vuota
 		    	list_del(&(ASL_Semd->s_next));		//rimuovo semd dalla ASL
-				list_add_tail(&(ASL_Semd->s_next), &semdFree_h);    //aggiungo semd alla semdFree
+				list_add_tail(&(ASL_Semd->s_next), &semdFree_h);	//aggiungo semd alla semdFree
                 }
 			return procQ_removed;		//ritorno puntatore al processo rimosso
             }
@@ -97,10 +97,10 @@ pcb_t* headBlocked(int *semAdd) {
 //18
 void initASL() {
 	int i;
-	INIT_LIST_HEAD(&(semd_h));			//per evitare conflitti nel caso ci siano residui in memoria
+	INIT_LIST_HEAD(&(semd_h));		//per evitare conflitti nel caso ci siano residui in memoria
 	INIT_LIST_HEAD(&(semdFree_h));
 	for (i=0; i < MAX_PROC; i++)
-		semd_t* newSemdEl = &semd_table[i];	{	//inizializzo campi della semd_table
+		semd_t* newSemdEl = &semd_table[i]; {		//inizializzo campi della semd_table
 		list_add_tail(&(newSemdEl->s_next), &(semdFree_h));		//aggiungo descrittore della semd_table alla semdFree
 	}	
 }
